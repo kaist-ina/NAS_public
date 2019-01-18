@@ -158,6 +158,8 @@ Hyunho, et al. "Neural adaptive content-aware internet video delivery." 13th USE
 }
 ```
 
-### Author
+### Author & Commercial usage
+
+If you plan to use the code for commercial usage, please contact to the following email.
 
 Hyunho Yeo (PhD candidate at KAIST) / chaos5958@gmail.com
