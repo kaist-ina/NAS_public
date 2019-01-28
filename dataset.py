@@ -6,6 +6,7 @@ from torchvision.transforms import Compose, ToTensor, Resize
 
 import utility as util
 from option import opt
+from scipy import misc
 
 """
 Dataset for DASH content which provides (lr, hr) images for multiple resolutions
@@ -37,7 +38,7 @@ class DatasetForDASH(data.Dataset):
     def _getPathInfo(self, resolution, upscale):
         checkfile = os.path.join(self.data_dir, 'prepare-{}p-{}fps'.format(resolution, self.fps))
         frames_dir = os.path.join(self.data_dir, '{}p-{}fps'.format(resolution, self.fps))
-
+#print('here !! ', frames_dir)
         if not upscale and resolution != self.hr:
             checkfile += '-no-upscale'
             frames_dir += '-no-upscale'
@@ -88,7 +89,8 @@ class DatasetForDASH(data.Dataset):
                 self.lr_upscaled_frames_dir.append(frames_dir)
 
                 checkfile, frames_dir = self._getPathInfo(video['height'], False)
-                self.lr_frames_dir.append(frames_dir)
+                #self.lr_frames_dir.append(frames_dir)
+#print ('append', frames_dir)
                 if not os.path.exists(checkfile):
                     if os.path.exists(frames_dir) and os.path.isdir(frames_dir):
                         shutil.rmtree(frames_dir)
@@ -125,6 +127,10 @@ class DatasetForDASH(data.Dataset):
             filenames.sort(key=util.natural_keys)
             self.lr_filenames.append(filenames)
 
+#print (self.lr_filenames[self.lr.index(720)])
+#print (len(self.lr_filenames))
+#       print (self.lr.index(720))
+#       print (self.lr_frames_dir)
         #(Optional) Load images on memory
         if self.load_on_memory:
             print('===>Load images on memory')
@@ -142,6 +148,7 @@ class DatasetForDASH(data.Dataset):
             for input_filenames in self.lr_filenames:
                 img_list = []
                 for name in input_filenames:
+#print(name)
                     img = Image.open(name)
                     img.load()
                     img_list.append(img)
@@ -172,34 +179,47 @@ class DatasetForDASH(data.Dataset):
 
         if self.load_on_memory:
             input = self.lr_images[self.lr.index(self.target_lr)][frame_idx]
+#input_test = self.input_transform(input)
+            #assert (self.videos[self.target_lr]['width'] in input_test.shape)
             target = self.hr_images[frame_idx]
         else:
+#if (self.target_lr == 360):
+#               print (self.lr_filenames[self.lr.index(self.target_lr)][frame_idx])
             input = Image.open(self.lr_filenames[self.lr.index(self.target_lr)][frame_idx])
             input.load()
             target = Image.open(self.hr_filenames[frame_idx])
             target.load()
 
         #Randomly select crop lcation
-        height, width = input.size
+        width, height = input.size
+        #print (width, height)
 
         scale = self.videos[self.target_lr]['scale']
         height_ = random.randrange(0, height - self.patch_size + 1)
         width_ = random.randrange(0, width - self.patch_size + 1)
-
+        input_ori = input 
+        assert (height_ + self.patch_size <= height)
+        assert (width_ + self.patch_size <= width)
         input = input.crop((width_ , height_, width_ + self.patch_size, height_ + self.patch_size))
         target = target.crop((width_ * scale, height_ * scale, (width_ + self.patch_size) * scale, (height_ + self.patch_size) * scale))
+#misc.imsave('{}_{}_w{}_h{}_input.png'.format(self.target_lr, frame_idx, width_, height_), input)
+#misc.imsave('{}_{}_w{}_h{}_target.png'.format(self.target_lr, frame_idx, width_, height_), target)
+#misc.imsave('{}_{}_w{}_h{}_input_ori.png'.format(self.target_lr, frame_idx, width_, height_), input_ori)
 
         input = self.input_transform(input)
         target = self.input_transform(target)
-
+        #print (input.shape)
         return input, target
 
     def getItemTest(self, index):
         if self.load_on_memory:
+#print (self.lr.index(self.target_lr))
             input = self.lr_images[self.lr.index(self.target_lr)][index]
             target = self.hr_images[index]
             upscaled = self.lr_upscaled_images[self.lr.index(self.target_lr)][index]
         else:
+#print (self.lr_filenames[self.lr.index(self.target_lr)][index])
+ 
             input = Image.open(self.lr_filenames[self.lr.index(self.target_lr)][index])
             input.load()
             target = Image.open(self.hr_filenames[index])
@@ -208,6 +228,7 @@ class DatasetForDASH(data.Dataset):
             upscaled.load()
 
         input = self.input_transform(input)
+#print (input.shape)
         upscaled = self.input_transform(upscaled)
         target = self.input_transform(target)
 

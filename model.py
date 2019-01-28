@@ -133,6 +133,8 @@ class SingleNetwork(nn.Module):
         else:
             assert idx <= self.num_block and idx >= 0
 
+        idx = self.num_block
+
         #feed-forward part
         x = self.head(x)
         res = x

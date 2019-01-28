@@ -57,6 +57,7 @@ class Trainer():
         self.dataset.setDatasetType('train')
         train_dataloader = DataLoader(dataset=self.dataset, num_workers=self.opt.num_thread, batch_size=self.opt.num_batch, pin_memory=True, shuffle=True)
 
+        running_loss = 0.0
         for lr in self.opt.dash_lr:
             self.dataset.setTargetLR(lr)
             scale = self.dataset.getTargetScale()
@@ -66,10 +67,27 @@ class Trainer():
             for iteration, batch in enumerate(train_dataloader, 1):
                 input, target = batch[0], batch[1]
                 input, target =  input.to(self.device), target.to(self.device)
-                loss = self.loss_func(self.model(input), target)
+                
                 self.optimizer_dict[scale].zero_grad()
+                loss = self.loss_func(self.model(input), target)
+               
+                running_loss += loss.item()
+                
+                input_test = input[0].permute(1,2,0)
+                output_test = self.model(input)[0].permute(1,2,0)
+                target_test = target[0].permute(1,2,0)
+            
+
                 loss.backward()
                 self.optimizer_dict[scale].step()
+                with torch.no_grad():
+                  if iteration % 500 == 0:
+                        print('loss: {}'.format(loss))
+                        misc.imsave('l2_{}_{}_input.png'.format(lr, iteration), input_test.to('cpu').numpy())
+                        misc.imsave('l2_{}_{}_output.png'.format(lr, iteration), output_test.to('cpu').numpy())
+                        misc.imsave('l2_{}_{}_target.png'.format(lr, iteration), target_test.to('cpu').numpy())
+       
+
 
                 if iteration % 10 == 0:
                     util.print_progress(iteration, len(self.dataset)/self.opt.num_batch, 'Train Progress ({}p):'.format(lr), 'Complete', 1, 50)
@@ -87,7 +105,8 @@ class Trainer():
             for lr in self.opt.dash_lr:
                 self.dataset.setTargetLR(lr)
                 self.model.setTargetScale(self.dataset.getTargetScale())
-
+#print (lr, self.dataset.getTargetScale())
+            
                 #iterate over validation images
                 total_sr_psnr = {}
                 total_baseline_psnr = []
@@ -100,28 +119,32 @@ class Trainer():
                     total_baseline_psnr.append(psnr_baseline)
 
                     #iterate over output nodes
-                    for node in self.model.getOutputNodes():
-                        output = self.model(input, node)
-                        output = torch.squeeze(torch.clamp(output, min=0, max=1.), 0).permute(1, 2, 0)
-                        output_np = output.to('cpu').numpy()
-                        psnr_sr = util.get_psnr(output_np, target_np)
+                    #for node in self.model.getOutputNodes():
+                    output = self.model(input)
+                    output = torch.squeeze(torch.clamp(output, min=0, max=1.), 0).permute(1, 2, 0)
+                    output_np = output.to('cpu').numpy()
+                    psnr_sr = util.get_psnr(output_np, target_np)
 
-                        if node not in total_sr_psnr:
-                            total_sr_psnr[node] = []
-                            total_sr_psnr[node].append(psnr_sr)
-                        else:
-                            total_sr_psnr[node].append(psnr_sr)
+                    '''
+                    if node not in total_sr_psnr:
+                        total_sr_psnr[node] = []
+                        total_sr_psnr[node].append(psnr_sr)
+                    else:
+                        total_sr_psnr[node].append(psnr_sr)
+                    '''
+                    total_sr_psnr[0] = []
+                    total_sr_psnr[0].append(psnr_sr)
 
-                        #save an image for the last node
-                        if node == self.model.getOutputNodes()[-1]:
-                            misc.imsave('{}/{}_output.png'.format(self.opt.result_dir, iteration), output_np)
-                            misc.imsave('{}/{}_baseline.png'.format(self.opt.result_dir, iteration), upscaled_np)
-                            misc.imsave('{}/{}_target.png'.format(self.opt.result_dir, iteration), target_np)
+                    #save an image for the last node
+                    #if node == self.model.getOutputNodes()[-1]:
+                    misc.imsave('{}/{}_{}_output.png'.format(self.opt.result_dir, lr, iteration), output_np)
+                    misc.imsave('{}/{}_{}_baseline.png'.format(self.opt.result_dir, lr, iteration), upscaled_np)
+                    misc.imsave('{}/{}_{}_target.png'.format(self.opt.result_dir, lr, iteration), target_np)
 
                     util.print_progress(iteration, len(self.dataset), 'Valid Progress ({}p):'.format(lr), 'Complete', 1, 50)
 
-                for node in self.model.getOutputNodes():
-                    print("Epoch[{}-validation-{}-{}p] PSNR (output): {:.3f} PSNR (baseline): {:.3f}".format(self.epoch, node, lr, np.mean(total_sr_psnr[node]), np.mean(total_baseline_psnr)))
+                #for node in self.model.getOutputNodes():
+                print("Epoch[{}-validation-{}-{}p] PSNR (output): {:.3f} PSNR (baseline): {:.3f}".format(self.epoch, 0, lr, np.mean(total_sr_psnr[0]), np.mean(total_baseline_psnr)))
 
     def save_model(self):
         save_path = os.path.join(self.opt.checkpoint_dir, 'epoch_{}.pth'.format(self.epoch))
