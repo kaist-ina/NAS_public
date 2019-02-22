@@ -66,8 +66,10 @@ class Trainer():
             for iteration, batch in enumerate(train_dataloader, 1):
                 input, target = batch[0], batch[1]
                 input, target =  input.to(self.device), target.to(self.device)
-                loss = self.loss_func(self.model(input), target)
+                
                 self.optimizer_dict[scale].zero_grad()
+                loss = self.loss_func(self.model(input), target)
+                
                 loss.backward()
                 self.optimizer_dict[scale].step()
 
@@ -114,9 +116,9 @@ class Trainer():
 
                         #save an image for the last node
                         if node == self.model.getOutputNodes()[-1]:
-                            misc.imsave('{}/{}_output.png'.format(self.opt.result_dir, iteration), output_np)
-                            misc.imsave('{}/{}_baseline.png'.format(self.opt.result_dir, iteration), upscaled_np)
-                            misc.imsave('{}/{}_target.png'.format(self.opt.result_dir, iteration), target_np)
+                            misc.imsave('{}/{}_{}_output.png'.format(self.opt.result_dir, lr, iteration), output_np)
+                            misc.imsave('{}/{}_{}_baseline.png'.format(self.opt.result_dir, lr, iteration), upscaled_np)
+                            misc.imsave('{}/{}_{}_target.png'.format(self.opt.result_dir, lr, iteration), target_np)
 
                     util.print_progress(iteration, len(self.dataset), 'Valid Progress ({}p):'.format(lr), 'Complete', 1, 50)
 

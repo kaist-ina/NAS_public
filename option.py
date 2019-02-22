@@ -17,7 +17,7 @@ parser.add_argument("--quality", type=str, choices=("low", "medium", "high", "ul
 parser.add_argument("--num_batch", type=int, default=64)
 parser.add_argument("--num_epoch", type=int, default=100)
 parser.add_argument("--num_update_per_epoch", type=int, default=1000)
-parser.add_argument("--weight_decay", type=float, default=1e-4)
+parser.add_argument("--weight_decay", type=float, default=0)
 parser.add_argument("--loss_type", type=str, default="l1", choices=("l2", "l1"))
 parser.add_argument("--lr", type=float, default=1e-4)
 parser.add_argument("--lr_decay_epoch", type=int, default=100)
@@ -36,7 +36,7 @@ parser.add_argument('--dash_hr', default=1080, type=int, help='highest resolutio
 parser.add_argument('--dash_lr', default=[240, 360, 480, 720], nargs='+', type=int, help='low resolutions of DASH videos')
 
 # Resource
-parser.add_argument("--num_thread", type=int, default=4, help="number of threads used for loading data (used by DataLoader)")
+parser.add_argument("--num_thread", type=int, default=6, help="number of threads used for loading data (used by DataLoader)")
 parser.add_argument("--use_cuda", action="store_true", help="use GPU(s) for training")
 parser.add_argument("--load_on_memory", action="store_true", help="load dataset on memory")
 

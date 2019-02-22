@@ -88,7 +88,7 @@ class DatasetForDASH(data.Dataset):
                 self.lr_upscaled_frames_dir.append(frames_dir)
 
                 checkfile, frames_dir = self._getPathInfo(video['height'], False)
-                self.lr_frames_dir.append(frames_dir)
+                
                 if not os.path.exists(checkfile):
                     if os.path.exists(frames_dir) and os.path.isdir(frames_dir):
                         shutil.rmtree(frames_dir)
@@ -179,8 +179,8 @@ class DatasetForDASH(data.Dataset):
             target = Image.open(self.hr_filenames[frame_idx])
             target.load()
 
-        #Randomly select crop lcation
-        height, width = input.size
+        #Randomly select crop location
+        width, height = input.size
 
         scale = self.videos[self.target_lr]['scale']
         height_ = random.randrange(0, height - self.patch_size + 1)
