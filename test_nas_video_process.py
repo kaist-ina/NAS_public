@@ -11,7 +11,7 @@ MAX_SEGMENT_LENGTH = 4
 SHARED_QUEUE_LEN = MAX_FPS * MAX_SEGMENT_LENGTH #Regulate GPU memory usage (> 3 would be fine)
 
 if __name__ == "__main__":
-    mp.set_start_method('spawn')
+    mp.set_start_method('spawn', force=True)
     torch.multiprocessing.set_sharing_strategy('file_descriptor')
 
     #create Queue, Pipe

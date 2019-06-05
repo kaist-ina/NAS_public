@@ -83,7 +83,7 @@ def decode(decode_queue, encode_queue, data_queue, shared_tensor_list):
                     break
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frame = cv2.resize(frame, (t_w, t_h), interpolation=cv2.INTER_CUBIC) #add bicubic resize
-                input_t_ = torch.from_numpy(frame).byte().cuda(async=True)
+                input_t_ = torch.from_numpy(frame).byte().cuda()
 
                 #4. start super-resolution
                 shared_tensor_list[t_h][frame_count % SHARED_QUEUE_LEN].copy_(input_t_)
@@ -170,7 +170,7 @@ def load_dnn_chunk(dnn_queue):
                 start_time = time.time()
                 random_tensor = torch.HalfTensor(1, 3, 480, 270) #TODO: test with resolution which takes the longest time
                 input = Variable(random_tensor, volatile=True)
-                input = input.cuda(async=True)
+                input = input.cuda()
 
                 #Prepare and test a mock DNN
                 for DNN in DNN_list:
@@ -349,7 +349,7 @@ def encode(encode_queue, shared_tensor_list):
                             #'-an', # Tells FFMPEG not to expect any audio
                             '{}'.format(os.path.join(process_dir, 'output.mp4'))]
 
-                pipe = sub.Popen(command, stdin=sub.PIPE, stderr=sub.PIPE)
+                pipe = sub.Popen(command, stdin=sub.PIPE, stderr=sub.PIPE, stdout=sub.PIPE, bufsize=10**9)
                 end_time_ = time.time()
                 print('encode [start]: {}sec'.format(end_time_ - encode_start_time))
 
