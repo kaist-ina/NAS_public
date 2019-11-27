@@ -16,6 +16,7 @@ from option import opt
 from model import MultiNetwork
 from dataset import DatasetForDASH
 import template
+from scipy import misc
 
 RESOLUTION = {240: (480, 270), 360: (640, 360), 480: (960, 540), 720: (1920, 1080), 1080: (1920, 1080)}
 DUMMY_TRIAL = 3
@@ -60,6 +61,30 @@ def measure_quality(input_queue, output_queue):
             break
 
     output_queue.put(quality_list)
+
+def save_img(input_queue):
+    print(mp.current_process().name)
+    print('process_start')
+    while True:
+        try:
+            input = input_queue.get()
+            if str(input[0]) == 'end':
+                print('process end')
+                break
+            else:
+                lr = input[0]
+                frame_idx = input[1]
+                input_np = input[2]
+                output_np = input[3]
+                target_np = input[4]
+
+                misc.imsave('{}/{}_{}_input.png'.format(opt.result_dir, lr, frame_idx), input_np)
+                misc.imsave('{}/{}_{}_output.png'.format(opt.result_dir, lr, frame_idx), output_np)
+                misc.imsave('{}/{}_{}_target.png'.format(opt.result_dir, lr, frame_idx), target_np)
+
+        except (KeyboardInterrupt, SystemExit):
+            print('exiting...')
+            break
 
 class Tester:
     def __init__(self, opt, model, dataset):
@@ -154,6 +179,52 @@ class Tester:
         result[self.opt.dash_hr].ssim = 1
 
         return result
+
+    def _generate_sr(self, output_node=None):
+        with torch.no_grad():
+            timer = util.timer()
+            if output_node == None :
+                output_node = self.output_nodes[-1]
+
+            dataloader = DataLoader(dataset=self.dataset, num_workers=6, batch_size=1, shuffle=False, pin_memory=True)
+            target_res = self.node2res[output_node]
+            
+            process_list = []
+            input_queue = mp.Queue()
+            for _ in range(PROCESS_NUM):
+                process = mp.Process(target=save_img, args=(input_queue, ))
+                process.start()
+                process_list.append(process)
+
+            #iterate over target resolutions
+            for lr in target_res:
+
+                self.dataset.setTargetLR(lr)
+                self.model.setTargetScale(self.dataset.getTargetScale())
+                for iteration, batch in enumerate(dataloader, 1):
+                    assert len(batch[0]) == 1
+
+                    #prepare
+                    input, upscaled, target = batch[0], batch[1], batch[2]
+                    input_np, pscaled_np, target_np = torch.squeeze(input, 0).permute(1, 2, 0).numpy(), torch.squeeze(upscaled, 0).permute(1, 2, 0).numpy(), torch.squeeze(target, 0).permute(1, 2, 0).numpy()
+                    input, upscaled, target =  input.to(self.device), upscaled.to(self.device), target.to(self.device)
+                    output = self.model(input, output_node)
+                    torch.cuda.synchronize()
+
+                    output = torch.squeeze(torch.clamp(output, min=0, max=1.), 0).permute(1, 2, 0)
+                    output_np = output.to('cpu').numpy()
+                    '''
+                    misc.imsave('{}/{}_{}_output.png'.format(self.opt.result_dir, lr, iteration), output_np)
+                    misc.imsave('{}/{}_{}_baseline.png'.format(self.opt.result_dir, lr, iteration), upscaled_np)
+                    misc.imsave('{}/{}_{}_target.png'.format(self.opt.result_dir, lr, iteration), target_np)
+                    '''
+                    input_queue.put((lr, iteration, input_np, output_np, target_np))
+                    elapsed_time = timer.toc()
+                    util.print_progress(iteration, len(self.dataset), 'Test Progress ({}p - {}sec):'.format(lr, round(elapsed_time, 2)), 'Complete', 1, 50)
+
+            #terminate
+            for _ in range(len(process_list)):
+                input_queue.put(('end', ))
 
     #get psnr, ssim of super-resolution
     def _analyze_sr(self, output_node):
