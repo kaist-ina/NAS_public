@@ -158,8 +158,8 @@ Hyunho, et al. "Neural adaptive content-aware internet video delivery." 13th USE
 }
 ```
 
-### Author & Commercial usage
+### Commercial usage
 
-If you plan to use the code for commercial usage, please contact to the following email.
+* `BY-NC-SA` – [Attribution-NonCommercial-ShareAlike](https://github.com/idleberg/Creative-Commons-Markdown/blob/master/4.0/by-nc-sa.markdown)
 
-Hyunho Yeo (PhD candidate at KAIST) / chaos5958@gmail.com
+NAS is currently protected under the patent and is retricted to be used for the commercial usage.
