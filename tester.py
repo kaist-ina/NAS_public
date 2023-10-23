@@ -16,7 +16,7 @@ from option import opt
 from model import MultiNetwork
 from dataset import DatasetForDASH
 import template
-from scipy import misc
+import imageio
 
 RESOLUTION = {240: (480, 270), 360: (640, 360), 480: (960, 540), 720: (1920, 1080), 1080: (1920, 1080)}
 DUMMY_TRIAL = 3
@@ -78,9 +78,9 @@ def save_img(input_queue):
                 output_np = input[3]
                 target_np = input[4]
 
-                misc.imsave('{}/{}_{}_input.png'.format(opt.result_dir, lr, frame_idx), input_np)
-                misc.imsave('{}/{}_{}_output.png'.format(opt.result_dir, lr, frame_idx), output_np)
-                misc.imsave('{}/{}_{}_target.png'.format(opt.result_dir, lr, frame_idx), target_np)
+                imageio.imwrite('{}/{}_{}_input.png'.format(opt.result_dir, lr, frame_idx), input_np.astype(np.uint8))
+                imageio.imwrite('{}/{}_{}_output.png'.format(opt.result_dir, lr, frame_idx), output_np.astype(np.uint8))
+                imageio.imwrite('{}/{}_{}_target.png'.format(opt.result_dir, lr, frame_idx), target_np.astype(np.uint8))
 
         except (KeyboardInterrupt, SystemExit):
             print('exiting...')
@@ -214,9 +214,9 @@ class Tester:
                     output = torch.squeeze(torch.clamp(output, min=0, max=1.), 0).permute(1, 2, 0)
                     output_np = output.to('cpu').numpy()
                     '''
-                    misc.imsave('{}/{}_{}_output.png'.format(self.opt.result_dir, lr, iteration), output_np)
-                    misc.imsave('{}/{}_{}_baseline.png'.format(self.opt.result_dir, lr, iteration), upscaled_np)
-                    misc.imsave('{}/{}_{}_target.png'.format(self.opt.result_dir, lr, iteration), target_np)
+                    imageio.imwrite('{}/{}_{}_output.png'.format(self.opt.result_dir, lr, iteration), output_np.astype(np.uint8))
+                    imageio.imwrite('{}/{}_{}_baseline.png'.format(self.opt.result_dir, lr, iteration), upscaled_np.astype(np.uint8))
+                    imageio.imwrite('{}/{}_{}_target.png'.format(self.opt.result_dir, lr, iteration), target_np.astype(np.uint8))
                     '''
                     input_queue.put((lr, iteration, input_np, output_np, target_np))
                     elapsed_time = timer.toc()

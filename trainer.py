@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from scipy import misc
+import imageio
 
 import utility as util
 
@@ -100,7 +100,7 @@ class Trainer():
 
                     psnr_baseline = util.get_psnr(upscaled_np, target_np)
                     total_baseline_psnr.append(psnr_baseline)
-
+ 
                     #iterate over output nodes
                     for node in self.model.getOutputNodes():
                         output = self.model(input, node)
@@ -116,9 +116,9 @@ class Trainer():
 
                         #save an image for the last node
                         if node == self.model.getOutputNodes()[-1]:
-                            misc.imsave('{}/{}_{}_output.png'.format(self.opt.result_dir, lr, iteration), output_np)
-                            misc.imsave('{}/{}_{}_baseline.png'.format(self.opt.result_dir, lr, iteration), upscaled_np)
-                            misc.imsave('{}/{}_{}_target.png'.format(self.opt.result_dir, lr, iteration), target_np)
+                            imageio.imwrite('{}/{}_{}_output.png'.format(self.opt.result_dir, lr, iteration), output_np.astype(np.uint8))
+                            imageio.imwrite('{}/{}_{}_baseline.png'.format(self.opt.result_dir, lr, iteration), upscaled_np.astype(np.uint8))
+                            imageio.imwrite('{}/{}_{}_target.png'.format(self.opt.result_dir, lr, iteration), target_np.astype(np.uint8))
 
                     util.print_progress(iteration, len(self.dataset), 'Valid Progress ({}p):'.format(lr), 'Complete', 1, 50)
 

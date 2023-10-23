@@ -13,7 +13,10 @@ Currently, we only provide NAS-MDSR, which is a super-resolution module of NAS.
 * (p) cv2 **(Use opencv package from [here](https://anaconda.org/conda-forge/opencv))**
 * (p) pillow
 * (p) ffmpeg
-* (b) MP4Box, x264 (Refer [here](https://bitmovin.com/mp4box-dash-content-generation-x264/) for installing these binaries)
+* (b) MP4Box, x264 (Refer [here](https://bitmovin.com/mp4box-dash-content-generation-x264/) for installing these binaries, or run the command below.)
+
+        sudo apt-get install x264
+        sudo apt-get install gpac
 
 ### Prepare MPEG-DASH dataset 
 
