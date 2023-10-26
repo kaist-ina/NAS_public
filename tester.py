@@ -2,7 +2,8 @@ import argparse, os, sys, logging, random, bisect, threading, queue, time
 from datetime import datetime
 import numpy as np
 import multiprocessing as mp
-from skimage.measure import compare_ssim
+# from skimage.measure import compare_ssim
+from skimage.metrics import structural_similarity as compare_ssim
 import torch
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
@@ -46,7 +47,8 @@ def measure_quality(input_queue, output_queue):
                 input_np = input[1]
                 target_np = input[2]
 
-                ssim = compare_ssim(input_np, target_np, gaussian_weights=True, sigma=1.5, use_sample_covariance=False, data_range=1.0, multichannel=True)
+                # ssim = compare_ssim(input_np, target_np, gaussian_weights=True, sigma=1.5, use_sample_covariance=False, data_range=1.0, multichannel=True) #deprecated
+                ssim = compare_ssim(input_np, target_np, gaussian_weights=True, sigma=1.5, data_range=1.0, channel_axis=2)
                 psnr = util.get_psnr(input_np, target_np, max_value=1.0)
 
                 quality = Quality()
@@ -78,6 +80,10 @@ def save_img(input_queue):
                 output_np = input[3]
                 target_np = input[4]
 
+                input_np *= 255
+                output_np *= 255
+                target_np *= 255
+                
                 imageio.imwrite('{}/{}_{}_input.png'.format(opt.result_dir, lr, frame_idx), input_np.astype(np.uint8))
                 imageio.imwrite('{}/{}_{}_output.png'.format(opt.result_dir, lr, frame_idx), output_np.astype(np.uint8))
                 imageio.imwrite('{}/{}_{}_target.png'.format(opt.result_dir, lr, frame_idx), target_np.astype(np.uint8))

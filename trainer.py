@@ -116,6 +116,10 @@ class Trainer():
 
                         #save an image for the last node
                         if node == self.model.getOutputNodes()[-1]:
+                            output_np *= 255
+                            upscaled_np *= 255
+                            target_np *= 255                            
+                            
                             imageio.imwrite('{}/{}_{}_output.png'.format(self.opt.result_dir, lr, iteration), output_np.astype(np.uint8))
                             imageio.imwrite('{}/{}_{}_baseline.png'.format(self.opt.result_dir, lr, iteration), upscaled_np.astype(np.uint8))
                             imageio.imwrite('{}/{}_{}_target.png'.format(self.opt.result_dir, lr, iteration), target_np.astype(np.uint8))
